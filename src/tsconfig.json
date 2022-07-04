@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "target": "es2020",
+        "module": "CommonJS",
+        "outDir": "../out",
+        "removeComments": true,
+        "declaration": true
+    },
+    "exclude": ["assets"],
+    "files": ["index.ts"]
+}
