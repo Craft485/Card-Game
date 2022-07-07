@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "target": "es2020",
+        // "outDir": "../../out/assets",
+        "outFile": "../../out/assets.js",
+        "removeComments": true,
+        "declaration": true
+    },
+    "files": ["Actions.ts", "Card.ts", "Deck.ts", "Player.ts", "Game.ts"]
+}

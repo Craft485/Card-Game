@@ -1,0 +1,77 @@
+{
+    "cards": [
+        {
+            "name": "Zeus",
+            "health": 100,
+            "attack": 50,
+            "defense": 25,
+            "typings": {
+                "isMajorOlympian": true
+            }
+        },
+        {
+            "name": "Hades",
+            "health": 100,
+            "attack": 50,
+            "defense": 25,
+            "typings": {
+                "isMajorOlympian": true
+            }
+        },
+        {
+            "name": "Poseidon",
+            "health": 100,
+            "attack": 50,
+            "defense": 25,
+            "typings": {
+                "isMajorOlympian": true
+            }
+        },
+        {
+            "name": "Hestia",
+            "health": 100,
+            "attack": 50,
+            "defense": 25,
+            "typings": {
+                "isMajorOlympian": true
+            }
+        },
+        {
+            "name": "Athena",
+            "health": 100,
+            "attack": 50,
+            "defense": 25,
+            "typings": {
+                "isMajorOlympian": true
+            }
+        },
+        {
+            "name": "Areas",
+            "health": 100,
+            "attack": 50,
+            "defense": 25,
+            "typings": {
+                "isMajorOlympian": true
+            }
+        },
+        {
+            "name": "Artemis",
+            "health": 100,
+            "attack": 50,
+            "defense": 25,
+            "typings": {
+                "isMajorOlympian": true
+            }
+        },
+        {
+            "name": "Chaos",
+            "health": 150,
+            "attack": 70,
+            "defense": 50,
+            "typings": {
+                "isMajorOlympian": false,
+                "isPrimordial": true
+            }
+        }
+    ]
+}
