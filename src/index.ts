@@ -3,7 +3,7 @@ const app = express()
 const http = require('http').createServer(app)
 const fs = require('fs')
 const io = require('socket.io')(http)
-const { Game, cardList} = require('./assets.js')
+const { Game, _cardList:cardList } = require('./assets.js')
 
 app.use(express.static('../public'))
 
@@ -33,13 +33,10 @@ io.on('connection', socket => {
         socket.emit('confirm', 'Joined game', firstTurn)
         // If isCurrentGame is false that means that at the beginning of this event it was true meaning the game is now ready to start
         if (!isCurrentGame) {
-            // We already send the client the conform message, do we really need to send them this as well?
             socket.emit('game-begin')
             // Let opponent know the game has begun
             io.sockets.sockets.get(currentPlayers[socket.id].Players.find(p => p.props.id !== socket.id).props.id).emit('game-begin')
         }
-        console.log(games)
-        console.log(currentPlayers)
     })
 
     socket.on("draw", async (args = []) => {
@@ -57,8 +54,9 @@ io.on('connection', socket => {
     })
 
     socket.on("play", args => {
+        console.log("Play event")
         const cName = args[0]
-        const isValidCard = cardList.find(card => card.name.toLowerCase() === cName.toLowerCase())
+        const isValidCard = Object.values(cardList).find((card: { props: { name: string } } ) => card.props.name.toLowerCase() === cName.toLowerCase())
         const g = currentPlayers[socket.id]
         // Find the player
         const player = g.Players.find(player => player.props.id === socket.id)
@@ -72,7 +70,7 @@ io.on('connection', socket => {
     })
 
     socket.on("attack", args => {
-
+        console.log("Attack event")
     })
 
     socket.on("turn-end", () => {
@@ -81,7 +79,7 @@ io.on('connection', socket => {
         const defender = g.Players.find(player => player.props.id !== socket.id)
         io.sockets.sockets.get(defender.props.id).emit('turn-ended')
     })
-
+    // FIXME: Disconnect event does not clear games/currentPlayers and does not inform the other player, it is the game that never ends even when all players have left
     socket.on("disconnect", () => console.info(`${socket.id} Disconnected`))
 })
 

@@ -76,6 +76,7 @@ function play(cardNameWithCount) {
     // There are two different counts at play here, my brain doesn't enjoy this
     const cardName = cardNameWithCount.split('_')[0]
     if (card) {
+        console.log("Play Card Event")
         let count = 1
         !function recurse() {
             if (!Game.myCardsInPlay[`${cardName}_${count}`]) {
@@ -90,18 +91,18 @@ function play(cardNameWithCount) {
         // Server doesn't care what count is
         socket.emit('play', [cardName])
         // Update UI
-        const newCard = generateHTML(card, `_${count}`)
-        newCard.onclick = () => {
-            Game.attackingCard = Game.myCardsInPlay[`${cardName}_${count}`]
-            // There is a better way to do this yes, that isn't a question
-            // Remove css class from all other cards in _myFeild
-            for (let i = 0; i < _myField.children.length; i++) {
-                _myField.children[i].classList.remove('card-select-for-action')
-            }
-            // Add css class to the newCard element
-            newCard.classList.add('card-select-for-action')
-        }
-        _myField.appendChild(newCard)
+        // const newCard = generateHTML(card, `_${count}`)
+        // newCard.onclick = () => {
+        //     Game.attackingCard = Game.myCardsInPlay[`${cardName}_${count}`]
+        //     // There is a better way to do this yes, that isn't a question
+        //     // Remove css class from all other cards in _myFeild
+        //     for (let i = 0; i < _myField.children.length; i++) {
+        //         _myField.children[i].classList.remove('card-select-for-action')
+        //     }
+        //     // Add css class to the newCard element
+        //     newCard.classList.add('card-select-for-action')
+        // }
+        // _myField.appendChild(newCard)
     }
 }
 
@@ -204,7 +205,25 @@ socket.on('newCard', card => {
         }()
         // UI
         const e = generateHTML(card, `_${count}`)
-        e.onclick = () => { play(card.name + `_${count}`); e.remove() }
+        e.onclick = () => {
+            // Remove css class from all other cards in _myFeild
+            for (let i = 0; i < _myField.children.length; i++) {
+                _myField.children[i].classList.remove('card-select-for-action')
+            }
+            document.getElementById('my-played').innerHTML += e.outerHTML
+            const newCard = document.getElementById('my-played').children.item(document.getElementById('my-played').children.length - 1)
+            e.classList.add('moving')
+            newCard.style.visibility = 'hidden'
+            e.style = `--new-x: ${newCard.getBoundingClientRect().x}px;
+            --current-x: ${e.getBoundingClientRect().x}px;`
+            setTimeout(() => {
+                e.remove()
+                Game.myCardCount--
+                Game.myCardCountInPlay++
+                newCard.style.visibility = 'visible'
+            }, 1900)
+            play(card.name + `_${count}`)
+        }
         _myHand.appendChild(e)
     }
 })
@@ -226,7 +245,7 @@ socket.on('op-play', card => {
         }
     }()
     // Update UI
-    _opHand.children[0].remove()
+    document.getElementsByClassName('card-b')[0].remove()
     const newOpCard = generateHTML(card, `_${count}`)
     newOpCard.onclick = () => {
         Game.defendingCard = Game.opponentsHand[card.name + `_${count}`]

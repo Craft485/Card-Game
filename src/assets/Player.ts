@@ -14,6 +14,7 @@ class Player {
     constructor (props: _PlayerProps) {
         this.props = props
         this.deck = props.deck
+        this.isTakingTurn = props.isTakingTurn || false
     }
 }
 
