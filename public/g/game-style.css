@@ -215,9 +215,38 @@ circle {
     font-size: 1.5rem;
 }
 
-#game-end-overlay {
+.game-end-overlay {
+    display: flex;
     position: absolute;
+    z-index: 10;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
     text-align: center;
     background-color: black;
     opacity: 50%;
+}
+
+#overlay-content {
+    margin: auto;
+    width: fit-content;
+    height: fit-content;
+    background: #727272;
+    opacity: 100%;
+    border-radius: 15px;
+    padding: 10px;
+}
+
+#overlay-content > button {
+    margin-top: 5px;
+    border-radius: 15px;
+    padding: 5px;
+    background-color: #5d5d5d;
+    color: white;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
 }

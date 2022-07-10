@@ -262,6 +262,18 @@ socket.on('attack-res', () => {
 
 })
 
+socket.on('player-left', () => {
+    const overlay = document.createElement('div')
+    overlay.className = 'game-end-overlay'
+    const content = document.createElement('div')
+    content.id = "overlay-content"
+    content.innerText = 'Your opponent has left, the game has ended.'
+    content.innerHTML += '<br/><button><a href="/">Return Home</a></button>'
+    overlay.appendChild(content)
+    document.body.appendChild(overlay)
+    socket.close()
+})
+
 socket.on('game-over', () => {
 
 })

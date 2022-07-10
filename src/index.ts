@@ -79,8 +79,25 @@ io.on('connection', socket => {
         const defender = g.Players.find(player => player.props.id !== socket.id)
         io.sockets.sockets.get(defender.props.id).emit('turn-ended')
     })
-    // FIXME: Disconnect event does not clear games/currentPlayers and does not inform the other player, it is the game that never ends even when all players have left
-    socket.on("disconnect", () => console.info(`${socket.id} Disconnected`))
+    // Disconnect event clears games/currentPlayers and informs the other player
+    socket.on("disconnect", () => {
+        console.info(`${socket.id} Disconnected`)
+        // Clear any player data from the game instance, then alert the remaining player, if there is one, that the game has ended
+        if (currentPlayers[socket.id].Players.length == 2) {
+            setTimeout(() => {
+                io.sockets.sockets.get(currentPlayers[socket.id].Players.find(p => p.props.id !== socket.id).props.id).emit('player-left')
+                delete currentPlayers[socket.id]
+            }, 1000)
+        }
+        if (currentPlayers[socket.id].Players.length == 1) delete currentPlayers[socket.id]
+        const index = games.findIndex(game => game.Players.find(player => player.props.id === socket.id))
+        // If index exists, then the game object exists in the games array
+        if (index >= 0) {
+            const playerIndex = games[index].Players.findIndex(player => player.props.id === socket.id)
+            games[index].Players.splice(playerIndex, 1)
+            games.splice(index, 1)
+        }
+    })
 })
 
 http.listen(process.argv[2] || 8080, console.info('Online!'))
