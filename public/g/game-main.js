@@ -14,7 +14,8 @@ const Game = {
     myCardCount: 0,
     oppCardCount: 0,
     myCardCountInPlay: 0,
-    oppCardCountInPlay: 0
+    oppCardCountInPlay: 0,
+    canPlayCard: false
 }
 
 const _opHand  = document.getElementById('opponent-hand')
@@ -65,6 +66,7 @@ function addOpponentsCardToPlay(newCard) {
 function endTurn() {
     socket.emit('turn-end')
     Game.isMyTurn = false
+    Game.canPlayCard = false
     Game.attackingCard = null
     Game.defendingCard = null
 }
@@ -76,7 +78,7 @@ function play(cardNameWithCount) {
     // There are two different counts at play here, my brain doesn't enjoy this
     const cardName = cardNameWithCount.split('_')[0]
     if (card) {
-        console.log("Play Card Event")
+        // This looks very pointless but this is technically looking at a different part of the game state than the recurse in socket#on('newCard') is looking at and managing said state
         let count = 1
         !function recurse() {
             if (!Game.myCardsInPlay[`${cardName}_${count}`]) {
@@ -90,19 +92,6 @@ function play(cardNameWithCount) {
         delete Game.myHand[cardNameWithCount]
         // Server doesn't care what count is
         socket.emit('play', [cardName])
-        // Update UI
-        // const newCard = generateHTML(card, `_${count}`)
-        // newCard.onclick = () => {
-        //     Game.attackingCard = Game.myCardsInPlay[`${cardName}_${count}`]
-        //     // There is a better way to do this yes, that isn't a question
-        //     // Remove css class from all other cards in _myFeild
-        //     for (let i = 0; i < _myField.children.length; i++) {
-        //         _myField.children[i].classList.remove('card-select-for-action')
-        //     }
-        //     // Add css class to the newCard element
-        //     newCard.classList.add('card-select-for-action')
-        // }
-        // _myField.appendChild(newCard)
     }
 }
 
@@ -131,24 +120,15 @@ function drawCard() {
     Game.myCardCount++
 }
 
-/**
- * Might not be needed
- */
-function drawCardOp() {
-    if (Game.oppCardCount === Game.maxCardCount) return
-    // Add a new card to opponents hand
-    const card = document.createElement('card')
-    card.className = "card mycard"
-    card.innerHTML = `<h1>test card</h1><br/><p>some card info</p><p class="card-data">some card data</p>`
-    card.onclick = () => {
-        if (Game.oppCardCountInPlay === Game.maxCardCount) return
-        card.remove()
-        document.getElementById('opponent-played').appendChild(card)
-        Game.oppCardCount--
-        Game.oppCardCountInPlay++
-    }
-    document.getElementById('opponent-hand').appendChild(card)
-    Game.oppCardCount++
+function action(attackingCard = Game.attackingCard, defendingCard = Game.defendingCard) {
+    // Check if we are attacking the opponent players directly or if we are attacking a card
+    const defendingEntity = defendingCard?.toLowerCase?.() === 'player' ? { type: 'player', health: Game.opponentsHealth } : defendingCard
+    const attackingCardCount = document.querySelector(`#${_myField.id} > .card-select-for-action`).classList[1].split('_')[1]
+    const defendingCardCount = document.querySelector(`#${_opField.id} > .card-select-for-action`).classList[1].split('_')[1]
+    console.log(defendingEntity)
+    console.log(attackingCardCount)
+    console.log(defendingCardCount)
+    if (attackingCard.props?.attack && attackingCardCount && defendingCardCount) socket.emit('attack', [attackingCard, defendingEntity, attackingCardCount, defendingCardCount])
 }
 
 // This variable is apart of a very dumb fix to a very dumb problem
@@ -161,8 +141,8 @@ socket.on('confirm', (msg, s) => {
     console.info(msg)
     Game.isMyTurn = s || false
     // TODO: Use document#querySelector here
-    _myHand.children[0].style.stroke = Game.isMyTurn ? 'blue' : 'red'
-    _opHand.children[0].style.stroke = Game.isMyTurn ? 'red' : 'blue'
+    document.querySelector('#my-hand .health-display').style.borderColor = Game.isMyTurn ? 'blue' : 'red'
+    document.querySelector('#opponent-hand .health-display').style.borderColor = Game.isMyTurn ? 'red' : 'blue'
 })
 
 socket.on('err', errmsg => console.error(`Err: ${errmsg}`))
@@ -180,6 +160,7 @@ socket.on('game-begin', () => {
 socket.on('turn-ended', () => {
     console.log('Turn ended, it is now your turn')
     Game.isMyTurn = true
+    Game.canPlayCard = true
     if (z) {
         for (let i = 0; i < 7; i++) socket.emit('draw', [{ isGenStartUp: true }])
         endTurn()
@@ -206,22 +187,36 @@ socket.on('newCard', card => {
         // UI
         const e = generateHTML(card, `_${count}`)
         e.onclick = () => {
-            // Remove css class from all other cards in _myFeild
-            for (let i = 0; i < _myField.children.length; i++) {
-                _myField.children[i].classList.remove('card-select-for-action')
+            if (!Game.canPlayCard || !Game.isMyTurn) return
+            Game.canPlayCard = false
+            // Changed from using outerHTML to regenerating the card html and appending it
+            const generatedHTMLForCard = generateHTML(card, `_${count}`)
+            document.getElementById('my-played').appendChild(generatedHTMLForCard)
+            // At the point of this click event firing the element is a child of #my-played
+            const newCard = document.querySelector(`#my-played .${card.name}_${count}`)
+            // Setup cards onclick to be used to attack
+            newCard.onclick = () => {
+                // Remove css class from all other cards in _myField
+                for (let i = 0; i < _myField.children.length; i++) _myField.children[i].classList.remove('card-select-for-action')
+                Game.attackingCard = Game.myCardsInPlay[`${card.name}_${count}`]
+                // Add css class to the newCard element
+                newCard.classList.add('card-select-for-action')
             }
-            document.getElementById('my-played').innerHTML += e.outerHTML
-            const newCard = document.getElementById('my-played').children.item(document.getElementById('my-played').children.length - 1)
             e.classList.add('moving')
             newCard.style.visibility = 'hidden'
             e.style = `--new-x: ${newCard.getBoundingClientRect().x}px;
-            --current-x: ${e.getBoundingClientRect().x}px;`
+            --current-x: ${e.getBoundingClientRect().x}px;
+            --current-y: ${e.getBoundingClientRect().y}px;
+            --new-y: ${newCard.getBoundingClientRect().y}px;`
+
             setTimeout(() => {
                 e.remove()
                 Game.myCardCount--
                 Game.myCardCountInPlay++
                 newCard.style.visibility = 'visible'
+                Game.canPlayCard = true
             }, 1900)
+
             play(card.name + `_${count}`)
         }
         _myHand.appendChild(e)
@@ -252,7 +247,7 @@ socket.on('op-play', card => {
         for (let i = 0; i < _opField.children.length; i++) {
             _opField.children[i].classList.remove('card-select-for-action')
         }
-        document.getElementsByTagName('svg')[0].classList.remove('card-select-for-action')
+        document.querySelector('#opponent-hand health-display').classList.remove('card-select-for-action')
         newOpCard.classList.add('card-select-for-action')
     }
     _opField.appendChild(newOpCard)

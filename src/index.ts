@@ -83,13 +83,10 @@ io.on('connection', socket => {
     socket.on("disconnect", () => {
         console.info(`${socket.id} Disconnected`)
         // Clear any player data from the game instance, then alert the remaining player, if there is one, that the game has ended
-        if (currentPlayers[socket.id].Players.length == 2) {
-            setTimeout(() => {
-                io.sockets.sockets.get(currentPlayers[socket.id].Players.find(p => p.props.id !== socket.id).props.id).emit('player-left')
-                delete currentPlayers[socket.id]
-            }, 1000)
-        }
-        if (currentPlayers[socket.id].Players.length == 1) delete currentPlayers[socket.id]
+        try {
+            io.sockets.sockets.get(currentPlayers[socket.id].Players.find(p => p.props.id !== socket.id).props.id).emit('player-left')
+        } catch (error) {/* Theres no need to do anything with the error */}
+        delete currentPlayers[socket.id]
         const index = games.findIndex(game => game.Players.find(player => player.props.id === socket.id))
         // If index exists, then the game object exists in the games array
         if (index >= 0) {

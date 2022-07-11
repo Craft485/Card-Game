@@ -2,14 +2,15 @@
     --row-border-width: 1px
 }
 
-body {
-    height: 100vh;
-    width: 100vw;
-    margin: 0;
+html, body {
+    margin: 0; 
     padding: 0;
-    background-color: black;
+    background: grey; 
     color: white;
+    height: 100%;
+    width: 100%;
     user-select: none;
+    font-family: sans-serif;
 }
 
 #content {
@@ -31,17 +32,6 @@ row {
     justify-content: center;
 }
 
-card {
-    height: fit-content;
-    width: calc(((100% - 3px) / 7) - 5vw);
-    border: blueviolet dotted 0.5px;
-    align-self: center;
-    justify-self: center;
-    margin: 1%;
-    text-align: center;
-    transition: all 2s ease-in-out;
-}
-
 .health-display-container {
     position: absolute;
     left: 0;
@@ -56,10 +46,10 @@ card {
     color: black;
     padding: 5px;
     border-radius: 15px;
+    border: 3px solid white;
 }
 
 #opponent-hand > .health-display-container {
-    /**transform: translateY(1160%);*/
     top: calc((90% - 35px)/4);
 }
 
@@ -82,15 +72,11 @@ card {
     cursor: pointer;
 }
 
-card h1 {
-    text-decoration: underline;
-}
-
 .card-data {
     color: darkcyan;
 }
 
-card:hover {
+.card:hover {
     cursor: pointer;
 }
 
@@ -100,78 +86,18 @@ card:hover {
 
 @keyframes move {
     100% {
-        transform: translate(calc(var(--new-x) - var(--current-x)), -220px);
+        /* Variables used here are determined via JS in order to have this work on different screen sizes */
+        transform: translate(
+            calc(var(--new-x) - var(--current-x)), 
+            calc(var(--new-y) - var(--current-y))
+        );
     }
 }
 
 #submit { opacity: 0.25; }
 
-html, body {
-    margin: 0; 
-    padding: 0;
-    background: grey; 
-    color: white;
-    height: 100%;
-    width: 100%;
-    user-select: none;
-    font-family: sans-serif;
-}
-
-circle {
-    transition: 1.5s;
-}
-
-.player > svg {
-    height: 120px;
-    width: 120px;
-    align-self: center;
-    margin: auto;
-}
-
-.player {
-    display: flex;
-    height: fit-content;
-    width: 99%;
-    margin: 0 0.5%;
-}
-
-#opHD, #myHD {
-    fill: rgb(100, 200, 125);
-}
-
-.deck {
-    position: absolute;
-    top: 20%;
-    right: 1%;
-    height: 18%;
-    width: 7%;
-    text-align: center;
-    justify-content: center;
-    border: medium solid black;
-}
-
-#myDeck {
-    top: unset !important;
-    bottom: 20%;
-}
-
-#game-board {
-    display: flex;
-    flex-direction: column;
-    border: thin solid black;
-    border-radius: 20px;
-    height: 75%;
-    width: 90%;
-    margin-left: 0.5%;
-}
-
-.row {
-    display: flex;
-    justify-content: space-evenly;
-    height: 25%;
-}
-
 .card {
+    position: relative;
     background-color: rgb(98, 98, 98);
     border: 3px solid black;
     border-radius: 10px;
@@ -182,10 +108,12 @@ circle {
 }
 
 .card > div {
-    margin-top: 40%;
+    position: absolute;
+    left: 0;
+    margin-top: 0;
+    right: 0;
+    bottom: 15px;
 }
-
-.card > h1 { background-color: darkgrey; }
 
 .card-b {
     background-color: rgb(102, 37, 0);
@@ -193,6 +121,14 @@ circle {
     background-repeat: no-repeat;
     width: 10%;
     background-position: center;
+}
+
+#opponent-played .card-select-for-action {
+    border-color: red;
+}
+
+#my-played .card-select-for-action {
+    border-color: green;
 }
 
 .card-defense-display { color: rgb(112, 191, 218); }
@@ -204,17 +140,6 @@ circle {
     border-style: dashed;
 }
 
-#attack-submit {
-    position: absolute;
-    right: 3%;
-    bottom: 3%;
-    padding: 3px 8px;
-    /* border: none; */
-    background: linear-gradient(180deg, rgba(185,14,14,1) 50%, rgba(144,17,17,1) 55%);
-    color: white;
-    font-size: 1.5rem;
-}
-
 .game-end-overlay {
     display: flex;
     position: absolute;
@@ -224,8 +149,8 @@ circle {
     left: 0;
     bottom: 0;
     text-align: center;
-    background-color: black;
-    opacity: 50%;
+    /* Must use an alpha value other wise the children of this element cannot have an opacity greater than that of its parent if it were to be set here using "opacity: 50%;" */
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 #overlay-content {
@@ -233,7 +158,6 @@ circle {
     width: fit-content;
     height: fit-content;
     background: #727272;
-    opacity: 100%;
     border-radius: 15px;
     padding: 10px;
 }
