@@ -4,13 +4,14 @@
  * @param {Card} defendingCardData 
  * @returns {Card[] | Error}
  */
-function _action(attackingCardData: Card, defendingCardData: Card): Card[] | Error { 
+function _action(attackingCardData: Card, defendingEntity: Card, attacker: Player, defender: Player): Card[] | Error { 
     return new Error("Undefinded behavior, how did you even call this function?") 
 }
 
-function Zeus_Action(attackingCardData: Card, defendingCardData: Card): Card[] | Error {
-    defendingCardData.health -= attackingCardData.attack
-    return [attackingCardData, defendingCardData]
+function Zeus_Action(attackingCardData: Card, defendingEntity: Card, attacker: Player, defender: Player): Card[] | Error {
+    defendingEntity.health -= attackingCardData.attack
+    defendingEntity.props.health -= attackingCardData.props.attack
+    return [attackingCardData, defendingEntity]
 }
 
 // [name: string, action: Function]

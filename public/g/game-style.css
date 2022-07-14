@@ -63,7 +63,7 @@ row {
     align-self: flex-end;
     height: 10%;
     width: 25%;
-    background: linear-gradient(to bottom, rgb(83, 135, 153), darkblue);
+    background: linear-gradient(to bottom, var(--color-start), var(--color-end));
     margin: auto;
     border-radius: 15px;
 }
@@ -94,7 +94,13 @@ row {
     }
 }
 
-#submit { opacity: 0.25; }
+.unavailable {
+    opacity: 0.25;
+}
+
+.unavailable:hover {
+    cursor: not-allowed !important;
+}
 
 .card {
     position: relative;

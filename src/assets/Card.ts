@@ -34,11 +34,12 @@ class Card {
         this.imgURL = props.imgURL || null
     }
 
-    // Prototype function, action should be redefined on each card
-    action(attackingCardData: Card, defendingCardData: Card): Card[] | Error {
+    // Prototype/default function, action may be redefined on certain cards this is just a base
+    action(attackingCardData: Card, defendingEntity: Card, attacker: Player, defender: Player): Card[] | Error {
         try {
-            defendingCardData.health -= attackingCardData.attack
-            return [attackingCardData, defendingCardData]
+            defendingEntity.health -= attackingCardData.attack
+            defendingEntity.props.health -= attackingCardData.props.attack
+            return [attackingCardData, defendingEntity]
         } catch (err) {
             return new Error(`Action failed on card: ${this.name}\n${err}`)
         }

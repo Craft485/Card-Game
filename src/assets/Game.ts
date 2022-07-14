@@ -8,7 +8,7 @@ class Game {
             const f = this.Players.length === 0 ? true : false
             // Multiple test decks are needed because Objects are reference types, meaning 2 games at the same time won't work currently.
             // This should be fixed once I do db stuff
-            const p = new Player({ id: id, deck: f ? _tDeck1 : _tDeck2, isTakingTurn: f, health: 500/*, mana: 5 */})
+            const p = new Player({ id: id, deck: f ? _tDeck1 : _tDeck2, isTakingTurn: f, health: 100/*, mana: 5 */})
             this.Players.push(p)
         }
     }
