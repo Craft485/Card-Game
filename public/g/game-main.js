@@ -261,25 +261,18 @@ socket.on('attack-res', (res, attackingCardCount, defendingCardCount, specialCon
             Game[Game.isMyTurn ? 'opponentsHealth' : 'myHealth'] = res[1].props.health
             if (!specialConditions) return
         }
-        const cardElements = document.getElementsByClassName('card')
-        for (let i = 0; i < cardElements.length; i++) {
-            const card = cardElements[i]
-            const parentElement = card.parentElement
-            // If the card we are looking at is the one we need to change
-            if (card.classList.contains(res[1].name)) {
-                const isMyCard = parentElement.id === _myField.id ? true : false
-                const hand = isMyCard ? 'myCardsInPlay' : 'opponentsHand'
-                // Update game state
-                Game[hand][res[1].name] = res[1]
-                res[1].props?.defense >= 0
-                ? Game[hand][res[1].name] = res[1] 
-                : Game.myHealth = res[1].props.health
-                // Update UI
-                const newCard = generateHTML(res[1].props, `_${defendingCardCount}`)
-                newCard.onclick = ev => selectCardForAction(res[1].name, newCard || ev.path[0])
-                card.replaceWith(newCard)
-            }
-        }
+
+        const defendingCard = document.querySelector(`#${Game.isMyTurn ? _opField.id : _myField.id} .${res[Game.isMyTurn ? 0 : 1].name}`)
+        const hand = Game.isMyTurn ? 'opponentsHand' : 'myCardsInPlay'
+        // Update game state
+        Game[hand][res[1].name] = res[1]
+        res[1].props?.defense >= 0
+        ? Game[hand][res[1].name] = res[1] 
+        : Game.myHealth = res[1].props.health
+        // Update UI
+        const newCard = generateHTML(res[1].props, `_${defendingCardCount}`)
+        newCard.onclick = ev => selectCardForAction(res[1].name, newCard || ev.path[0])
+        defendingCard.replaceWith(newCard)
         // Allow end of turn
         Game.successfullAttackRes = true
     }
