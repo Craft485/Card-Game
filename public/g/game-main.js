@@ -21,7 +21,7 @@ const _myField = document.getElementById('my-played')
 const _myHand  = document.getElementById('my-hand')
 
 document.querySelector('#opponent-hand .health-display').onclick = () => {
-    if (Game.defendingCard?.toLowerCase !== 'player') for (let i = 0; i < _opField.children.length; i++) _opField.children[i].classList.remove('card-select-for-action')
+    if (Game.defendingCard?.toLowerCase?.() !== 'player') for (let i = 0; i < _opField.children.length; i++) _opField.children[i].classList.remove('card-select-for-action')
     document.querySelector('#opponent-hand .health-display').classList[Game.defendingCard?.toLowerCase?.() === 'player' ? 'remove' : 'add']('card-select-for-action')
     Game.defendingCard = Game.defendingCard?.toLowerCase?.() === 'player' ? null : 'player'
 }
@@ -65,7 +65,7 @@ function endTurn() {
     if (!z) {
         const numOfCardsInHand = document.querySelectorAll('#my-hand > div').length
         const cardsToDraw = Game.maxCardCount - numOfCardsInHand
-        console.log(cardsToDraw)
+        // console.log(cardsToDraw)
         for (let i = 0; i < cardsToDraw; i++) socket.emit('draw')
     }
 }
@@ -87,6 +87,10 @@ function play(cardNameWithCount) {
                 return recurse()
             }
         }()
+        // A hopefully temp fix to keeping count consistent between the game state and the ui
+        const element = document.querySelector(`#${_myField.id} .${cardNameWithCount}`)
+        element.classList.remove(cardNameWithCount)
+        element.classList.add(cardName + "_" + count)
         Game.myCardsInPlay[cardName + `_${count}`] = card
         delete Game.myHand[cardNameWithCount]
         // Server doesn't care what count is
@@ -99,8 +103,8 @@ function action() {
     const defendingCard = Game.defendingCard
     // Check if we are attacking the opponent players directly or if we are attacking a card
     const defendingEntity = defendingCard?.toLowerCase?.() === 'player' ? { type: 'player', health: Game.opponentsHealth } : defendingCard
-    const attackingCardCount = document.querySelector(`#${_myField.id} > .card-select-for-action`).classList[1].split('_')[1]
-    const defendingCardCount = document.querySelector(`#${_opField.id} > .card-select-for-action`)?.classList[1].split('_')[1] || 'player'
+    const attackingCardCount = document.querySelector(`#${_myField.id} > .card-select-for-action`)?.className.match(/\w+_\d/)[0].split('_')[1]
+    const defendingCardCount = document.querySelector(`#${_opField.id} > .card-select-for-action`)?.className.match(/\w+_\d/)[0].split('_')[1] || 'player'
     if (Game.isMyTurn && attackingCard.props?.attack && attackingCardCount && defendingCardCount) socket.emit('attack', [attackingCard, defendingEntity, attackingCardCount, defendingCardCount])
 }
 
@@ -114,9 +118,13 @@ function selectCardForAction(cardName, cardElement, cardCount = null) {
     const isMyCard = cardElement.parentElement.id === _myField.id ? true : false
     const selection = isMyCard ? 'attackingCard' : 'defendingCard'
     const hand = isMyCard ? 'myCardsInPlay' : 'opponentsHand'
+    // Count is going to be different than what would be passed to this function as the UI gets updated
+    // Because of this, we must read the UI to dynamically determine what count should be
+    let count = null
+    if (isMyCard) count = cardElement.className.match(/\w+_\d/)[0].split('_')[1]
     if (cardElement.parentElement.id === _opField.id) document.querySelector('#opponent-hand .health-display').classList.remove('card-select-for-action')
     // Update game state
-    Game[selection] = Game[hand][cardCount ? `${cardName}_${cardCount}` : cardName]
+    Game[selection] = Game[hand][cardCount || count ? `${cardName}_${count || cardCount}` : cardName]
     // If we want to unselect a card we've selected
     if (cardElement.classList.contains('card-select-for-action')) {
         Game[selection] = null
