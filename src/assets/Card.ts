@@ -35,7 +35,7 @@ class Card {
     }
 
     // Prototype/default function, action may be redefined on certain cards this is just a base
-    action(attackingCardData: Card, defendingEntity: Card, attacker: Player, defender: Player): Card[] | Error {
+    action(attackingCardData: Card, defendingEntity: Card, game: Game): Card[] | Error {
         try {
             defendingEntity.health -= attackingCardData.attack
             defendingEntity.props.health -= attackingCardData.props.attack

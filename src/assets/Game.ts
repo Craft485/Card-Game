@@ -1,7 +1,9 @@
 class Game {
     Players: Array<Player>
+    playingField: { id?: string, cards?: {} }
     constructor () {
         this.Players = []
+        this.playingField = {}
     }
     join(id: string): void {
         if (this.Players.length < 3) {
@@ -10,7 +12,12 @@ class Game {
             // This should be fixed once I do db stuff
             const p = new Player({ id: id, deck: f ? _tDeck1 : _tDeck2, isTakingTurn: f, health: 100/*, mana: 5 */})
             this.Players.push(p)
+            // Init players field object
+            this.playingField[id] = {id: id, cards: {}}
         }
+    }
+    playCard(cardData: Card, socketID: string): void {
+        this.playingField[socketID].cards[cardData.name] = cardData
     }
     drawCard(playerID: string): Card | Error {
         // Get the player

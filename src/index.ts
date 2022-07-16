@@ -61,6 +61,8 @@ io.on('connection', socket => {
         // Find the player
         const player = g.Players.find(player => player.props.id === socket.id)
         if (isValidCard && g && player.isTakingTurn) {
+            // Update server side game state
+            g.playCard(isValidCard, socket.id)
             // Tell the other player that a card was played
             const p = g.Players.find(player => !player.isTakingTurn)
             io.sockets.sockets.get(p.props.id).emit('op-play', isValidCard)
@@ -80,7 +82,7 @@ io.on('connection', socket => {
         if(attacker?.isTakingTurn && attackingCardData?.props?.attack && (defendingCardData?.props?.health || defendingCardData?.health)) {
             // Call action method and return result
             const defendingEntity = defendingCardData?.type?.toLowerCase() === 'player' ? defender : defendingCardData
-            const attackResult = await attackingCardAction(attackingCardData, defendingEntity, attacker, defender)
+            const attackResult = await attackingCardAction(attackingCardData, defendingEntity, game)
             if (attackResult instanceof Error) {
                 console.error(attackResult)
                 socket.emit('err', 'Attack event failed')
