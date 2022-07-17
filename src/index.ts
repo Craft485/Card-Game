@@ -4,7 +4,9 @@ const http = require('http').createServer(app)
 const fs = require('fs')
 const io = require('socket.io')(http)
 const { Game, _cardList:cardList } = require('./assets.js')
+const morgan = require('morgan')
 
+app.use(morgan('combined'))
 app.use(express.static('../public'))
 
 const currentPlayers = {}
