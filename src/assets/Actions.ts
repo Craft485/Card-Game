@@ -1,17 +1,35 @@
-/**
- * Prototype function
- * @param {Card} attackingCardData 
- * @param {Card} defendingCardData 
- * @returns {Card[] | Error}
- */
-function _action(attackingCardData: Card, defendingEntity: Card, game: Game): Card[] | Error { 
+interface _actionResProps {
+    attackingCard: Card
+    defendingCard?: Card
+    defendingPlayer?: Player
+    attackingPlayer?: Player
+    specialConditions?: any
+}
+class actionRes {
+    attackingCard: Card
+    defendingCard?: Card
+    defendingPlayer?: Player
+    attackingPlayer?: Player
+    specialConditions?: any
+    constructor (props: _actionResProps) {
+        this.attackingCard = props.attackingCard
+        this.defendingCard = props.defendingCard || null
+        this.defendingPlayer = props.defendingPlayer || null
+        this.attackingPlayer = props.attackingPlayer || null
+        this.specialConditions = props.specialConditions || null
+    }
+}
+
+function _action(attackingCardData: Card, defendingCardData: Card, game: Game, attackingCardCount: number, defendingCardCount: number): actionRes | Error { 
     return new Error("Undefinded behavior, how did you even call this function?") 
 }
 
-function Zeus_Action(attackingCardData: Card, defendingEntity: Card, game: Game): Card[] | Error {
-    defendingEntity.health -= attackingCardData.attack
-    defendingEntity.props.health -= attackingCardData.props.attack
-    return [attackingCardData, defendingEntity]
+function Zeus_Action(attackingCardData: Card, defendingCardData: Card, game: Game, attackingCardCount: number, defendingCardCount: number): actionRes | Error {
+    defendingCardData.health -= attackingCardData.attack
+    defendingCardData.props.health -= attackingCardData.props.attack
+    // Deal excess damage to player
+    if (defendingCardData.health < 0) var defendingPlayer = cardDeath(defendingCardData, game, defendingCardCount)
+    return new actionRes({ attackingCard: attackingCardData, defendingCard: defendingCardData, defendingPlayer: defendingPlayer })
 }
 
 // [name: string, action: Function]

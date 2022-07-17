@@ -20,12 +20,6 @@ const _opField = document.getElementById('opponent-played')
 const _myField = document.getElementById('my-played')
 const _myHand  = document.getElementById('my-hand')
 
-document.querySelector('#opponent-hand .health-display').onclick = () => {
-    if (Game.defendingCard?.toLowerCase?.() !== 'player') for (let i = 0; i < _opField.children.length; i++) _opField.children[i].classList.remove('card-select-for-action')
-    document.querySelector('#opponent-hand .health-display').classList[Game.defendingCard?.toLowerCase?.() === 'player' ? 'remove' : 'add']('card-select-for-action')
-    Game.defendingCard = Game.defendingCard?.toLowerCase?.() === 'player' ? null : 'player'
-}
-
 function generateHTML(card, count) {
     const parent = document.createElement('div')
     // I'm aware this line makes little sense, but it works!
@@ -68,6 +62,8 @@ function endTurn() {
         // console.log(cardsToDraw)
         for (let i = 0; i < cardsToDraw; i++) socket.emit('draw')
     }
+    document.querySelector('#my-hand .health-display').style.borderColor = Game.isMyTurn ? 'blue' : 'red'
+    document.querySelector('#opponent-hand .health-display').style.borderColor = Game.isMyTurn ? 'red' : 'blue'
 }
 
 function play(cardNameWithCount) {
@@ -101,11 +97,10 @@ function play(cardNameWithCount) {
 function action() {
     const attackingCard = Game.attackingCard
     const defendingCard = Game.defendingCard
-    // Check if we are attacking the opponent players directly or if we are attacking a card
-    const defendingEntity = defendingCard?.toLowerCase?.() === 'player' ? { type: 'player', health: Game.opponentsHealth } : defendingCard
     const attackingCardCount = document.querySelector(`#${_myField.id} > .card-select-for-action`)?.className.match(/\w+_\d/)[0].split('_')[1]
-    const defendingCardCount = document.querySelector(`#${_opField.id} > .card-select-for-action`)?.className.match(/\w+_\d/)[0].split('_')[1] || 'player'
-    if (Game.isMyTurn && attackingCard.props?.attack && attackingCardCount && defendingCardCount) socket.emit('attack', [attackingCard, defendingEntity, attackingCardCount, defendingCardCount])
+    const defendingCardCount = document.querySelector(`#${_opField.id} > .card-select-for-action`)?.className.match(/\w+_\d/)[0].split('_')[1]
+    console.log(defendingCardCount)
+    if (Game.isMyTurn && attackingCard.props?.attack && attackingCardCount && defendingCardCount) socket.emit('attack', [attackingCard, defendingCard, attackingCardCount, defendingCardCount])
 }
 
 /** 
@@ -122,7 +117,6 @@ function selectCardForAction(cardName, cardElement, cardCount = null) {
     // Because of this, we must read the UI to dynamically determine what count should be
     let count = null
     if (isMyCard) count = cardElement.className.match(/\w+_\d/)[0].split('_')[1]
-    if (cardElement.parentElement.id === _opField.id) document.querySelector('#opponent-hand .health-display').classList.remove('card-select-for-action')
     // Update game state
     Game[selection] = Game[hand][cardCount || count ? `${cardName}_${count || cardCount}` : cardName]
     // If we want to unselect a card we've selected
@@ -172,6 +166,8 @@ socket.on('turn-ended', () => {
         endTurn()
         z = false
     }
+    document.querySelector('#my-hand .health-display').style.borderColor = Game.isMyTurn ? 'blue' : 'red'
+    document.querySelector('#opponent-hand .health-display').style.borderColor = Game.isMyTurn ? 'red' : 'blue'
 })
 
 socket.on('no-play', msg => console.error(msg))
@@ -244,37 +240,48 @@ socket.on('op-play', card => {
     _opField.appendChild(newOpCard)
 })
 
-socket.on('attack-res', (res, attackingCardCount, defendingCardCount, specialConditions) => {
-    // res[0] is the attacking card while res[1] is the defending card
-    if (!res[0].name?.includes?.('_')) res[0].name += `_${attackingCardCount}`
-    if (!res[1].name?.includes?.('_')) res[1].name += `_${defendingCardCount}`
+socket.on('attack-res', 
+/**
+ * @param {{attackingCard:{name:string,health:number},defendingCard:{name:string,health:number},defendingPlayer:{health:number}|null,attackingPlayer:{health:number}|null,specialConditions:Function|null}} res
+ * @param { number } attackingCardCount
+ * @param { number } defendingCardCount
+ */ 
+(res, attackingCardCount, defendingCardCount) => {
     if (res) {
-        // Reset game state and UI a bit
+        // Ensure card name formatting
+        if (!res.attackingCard.name.includes('_')) res.attackingCard.name += `_${attackingCardCount}`
+        if (!res.defendingCard.name.includes('_')) res.defendingCard.name += `_${defendingCardCount}`
+        // Reset game state
         Game.attackingCard = null
         Game.defendingCard = null
-        if (Game.isMyTurn) document.querySelector('#my-played .card-select-for-action').classList.remove('card-select-for-action')
         // Prevent end of turn before we're finished
         Game.successfullAttackRes = false
-        // If a player was attacked we can just update their health display and end
-        if (defendingCardCount?.toLowerCase() === 'player') {
-            document.querySelector(`#${!Game.isMyTurn ? 'my-hand' : 'opponent-hand'} .health-display`).innerText = res[1].props.health
-            Game[Game.isMyTurn ? 'opponentsHealth' : 'myHealth'] = res[1].props.health
-            if (!specialConditions) return
+        // If a player was attacked we can just update their health display
+        if (res.defendingPlayer !== null) {
+            document.querySelector(`#${!Game.isMyTurn ? 'my-hand' : 'opponent-hand'} .health-display`).innerText = res.defendingPlayer.props.health
+            Game[Game.isMyTurn ? 'opponentsHealth' : 'myHealth'] = res.defendingPlayer.props.health
         }
 
-        const defendingCard = document.querySelector(`#${Game.isMyTurn ? _opField.id : _myField.id} .${res[Game.isMyTurn ? 0 : 1].name}`)
+        const defendingCard = document.querySelector(`#${Game.isMyTurn ? _opField.id : _myField.id} .${res.defendingCard.name}`)
         const hand = Game.isMyTurn ? 'opponentsHand' : 'myCardsInPlay'
-        // Update game state
-        Game[hand][res[1].name] = res[1]
-        res[1].props?.defense >= 0
-        ? Game[hand][res[1].name] = res[1] 
-        : Game.myHealth = res[1].props.health
-        // Update UI
-        const newCard = generateHTML(res[1].props, `_${defendingCardCount}`)
-        newCard.onclick = ev => selectCardForAction(res[1].name, newCard || ev.path[0])
-        defendingCard.replaceWith(newCard)
+        // Check and deal with card death
+        if (res.defendingCard.health <= 0) {
+            defendingCard.remove()
+            delete Game[hand][res.defendingCard.name]
+        } else {
+            // Update game state
+            Game[hand][res.defendingCard.name] = res.defendingCard
+            res.defendingCard.props?.defense >= 0
+            ? Game[hand][res.defendingCard.name] = res.defendingCard 
+            : Game.myHealth = res.defendingCard.props.health
+            // Update UI
+            const newCard = generateHTML(res.defendingCard.props, `_${defendingCardCount}`)
+            newCard.onclick = ev => selectCardForAction(res.defendingCard.name, newCard || ev.path[0])
+            defendingCard.replaceWith(newCard)
+        }
         // Allow end of turn
         Game.successfullAttackRes = true
+        if (Game.isMyTurn) document.querySelector('#my-played .card-select-for-action')?.classList.remove('card-select-for-action')
     }
 })
 
@@ -295,7 +302,7 @@ socket.on('game-over', res => {
     const overlay = document.createElement('div')
     overlay.className = 'game-end-overlay'
     const content = document.createElement('div')
-    content.id = "overylay-content"
+    content.id = "overlay-content"
     content.innerText = `Winner:\n${res.w.props.id}\n\nLoser:\n${res.l.props.id}`
     overlay.appendChild(content)
     document.body.appendChild(overlay)

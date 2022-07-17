@@ -35,17 +35,23 @@ class Card {
     }
 
     // Prototype/default function, action may be redefined on certain cards this is just a base
-    action(attackingCardData: Card, defendingEntity: Card, game: Game): Card[] | Error {
-        try {
-            defendingEntity.health -= attackingCardData.attack
-            defendingEntity.props.health -= attackingCardData.props.attack
-            return [attackingCardData, defendingEntity]
-        } catch (err) {
-            return new Error(`Action failed on card: ${this.name}\n${err}`)
-        }
+    action(attackingCardData: Card, defendingCardData: Card, game: Game, attackingCardCount: number, defendingCardCount: number): actionRes | Error {
+        defendingCardData.health -= attackingCardData.attack
+        defendingCardData.props.health -= attackingCardData.props.attack
+        // Deal excess damage to player
+        console.log(defendingCardCount)
+        if (defendingCardData.health < 0) var defendingPlayer = cardDeath(defendingCardData, game, defendingCardCount)
+        return new actionRes({ attackingCard: attackingCardData, defendingCard: defendingCardData, defendingPlayer: defendingPlayer || null })
     }
 }
 
+function cardDeath(defendingCardData: Card, game: Game, defendingCardCount: number): Player {
+    const defendingPlayer: Player = game.Players.find((p: Player) => !p.isTakingTurn)
+    defendingPlayer.health -= Math.abs(defendingCardData.health)
+    defendingPlayer.props.health -= Math.abs(defendingCardData.health)
+    delete game.playingField[defendingPlayer.id].cards[defendingCardData.name.includes('_') ? defendingCardData.name : `${defendingCardData.name}_${defendingCardCount}`]
+    return defendingPlayer
+}
 const _cardList = {}
 
 cards.forEach((cardData: Card) => {

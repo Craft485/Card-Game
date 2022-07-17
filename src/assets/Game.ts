@@ -1,6 +1,6 @@
 class Game {
     Players: Array<Player>
-    playingField: { id?: string, cards?: {} }
+    playingField: { player?: {id?: string, cards?: {}} }
     constructor () {
         this.Players = []
         this.playingField = {}
@@ -17,7 +17,19 @@ class Game {
         }
     }
     playCard(cardData: Card, socketID: string): void {
-        this.playingField[socketID].cards[cardData.name] = cardData
+        // console.log(cardData)
+        let count = 1
+        const gameInstance = this
+        !function recurse() {
+            if (!gameInstance.playingField[socketID].cards[cardData.name + '_' + count]) {
+                // cardData.name += `_${count}`
+                gameInstance.playingField[socketID].cards[cardData.name + '_' + count] = cardData
+                // console.log(gameInstance.playingField[socketID].cards)
+            } else {
+                count++
+                return recurse()
+            }
+        }()
     }
     drawCard(playerID: string): Card | Error {
         // Get the player

@@ -81,8 +81,7 @@ io.on('connection', socket => {
 
         if(attacker?.isTakingTurn && attackingCardData?.props?.attack && (defendingCardData?.props?.health || defendingCardData?.health)) {
             // Call action method and return result
-            const defendingEntity = defendingCardData?.type?.toLowerCase() === 'player' ? defender : defendingCardData
-            const attackResult = await attackingCardAction(attackingCardData, defendingEntity, game)
+            const attackResult = await attackingCardAction(attackingCardData, defendingCardData, game, attackingCardCount, defendingCardCount)
             if (attackResult instanceof Error) {
                 console.error(attackResult)
                 socket.emit('err', 'Attack event failed')
