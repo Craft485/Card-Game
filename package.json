@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "cd out && node index.js 8080",
-    "compile-assets": "cd ./src/assets && echo \"Compiling assets...\" && tsc && cd ..",
-    "compile-server": "cd ./src && echo \"Compiling server...\" && tsc && cd ..",
-    "cs": "npm run compile-assets && npm run start",
+    "compile-assets": "cd ./src/assets && echo Compiling assets... && tsc && echo Assets compiled to /out && cd ..",
+    "compile-server": "cd ./src && echo Compiling server... && tsc && echo Server compiled to /out && cd ..",
+    "ca-s": "npm run compile-assets && npm run start",
+    "cs-s": "npm run compile-server && npm run start",
     "dev": "npm run compile-server && npm run compile-assets && npm run start"
   },
   "keywords": [],
