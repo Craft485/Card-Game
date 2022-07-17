@@ -32,7 +32,7 @@ function generateHTML(card, count) {
     title.innerHTML = `<b>${card.name}</b>`
 
     const stats = document.createElement('div')
-    stats.innerHTML = `<span class="card-defense-display">${card.props?.defense || card.defense}</span> / <span class="card-health-display">${card.props?.health || card.health}</span> / <span class="card-attack-display">${card.props?.attack || card.attack}</span>`
+    stats.innerHTML = `<span class="card-cost-display">${card.props?.cost || card.cost}</span> / <span class="card-health-display">${card.props?.health || card.health}</span> / <span class="card-attack-display">${card.props?.attack || card.attack}</span>`
 
     parent.appendChild(title)
     parent.appendChild(document.createElement('br'))

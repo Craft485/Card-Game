@@ -6,7 +6,6 @@ interface _CardProps {
     imgURL?: string
     health?: number,
     attack?: number,
-    defense?: number,
     cost?: number,
     typings?: {
         isMajorOlympian?: boolean
@@ -21,7 +20,6 @@ class Card {
     name: string
     health?: number
     attack?: number
-    defense?: number
     cost?: number
     imgURL?: string
     constructor (props: _CardProps) {
@@ -29,7 +27,6 @@ class Card {
         this.name = props.name || "Could not find card name."
         this.health = props.health || 0
         this.attack = props.attack || 0
-        this.defense = props.defense || 0
         this.cost = props.cost || 0
         this.imgURL = props.imgURL || null
     }

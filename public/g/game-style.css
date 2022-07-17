@@ -137,7 +137,7 @@ row {
     border-color: green;
 }
 
-.card-defense-display { color: rgb(112, 191, 218); }
+.card-cost-display { color: rgb(112, 191, 218); }
 .card-health-display  { color: rgb(100, 200, 125); }
 .card-attack-display  { color: rgb(255, 100, 100); }
 
