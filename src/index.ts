@@ -6,7 +6,7 @@ const io = require('socket.io')(http)
 const { Game, _cardList:cardList } = require('./assets.js')
 const morgan = require('morgan')
 
-app.use(morgan('combined'))
+app.use(morgan(':remote-addr :method :url :status :response-time ms :res[content-length]'))
 app.use(express.static('../public'))
 
 const currentPlayers = {}
