@@ -42,32 +42,35 @@ io.on('connection', socket => {
     })
 
     socket.on("draw", async (args = []) => {
-        console.log("Draw call received")
         const g = currentPlayers[socket.id]
         const op = g.Players.find(p => p.props.id !== socket.id)
         const newCard = await g.drawCard(socket.id)
-        if (newCard instanceof Error) {
+        if (newCard instanceof Error || newCard === null) {
             socket.emit('err', 'An error occured | ACTION: Draw Card')
         } else {
-            socket.emit('newCard', newCard)
+            const check = newCard?.props.typings.isItem ? `${newCard.checkForCanBePlayed}` : null
+            socket.emit('newCard', newCard, check)
             // Are we drawing the initial cards? If so the opponent's client doesn't care
             if(!args[0]?.isGenStartUp) io.sockets.sockets.get(op.props.id).emit('op-new-card')
         }
     })
 
-    socket.on("play", args => {
+    socket.on("play", async (data) => {
         console.log("Play event")
-        const cName = args[0]
-        const isValidCard = Object.values(cardList).find((card: { props: { name: string } } ) => card.props.name.toLowerCase() === cName.toLowerCase())
+        const cName: string = data.cName
+        const isValidCard: any = Object.values(cardList).find((card: { props: { name: string } } ) => card.props.name.toLowerCase() === cName.toLowerCase())
         const g = currentPlayers[socket.id]
         // Find the player
         const player = g.Players.find(player => player.props.id === socket.id)
         if (isValidCard && g && player.isTakingTurn) {
             // Update server side game state
             g.playCard(isValidCard, socket.id)
+            // If an item card is played we need to inform both players of its result
+            const itemActionRes = isValidCard.props.typings.isItem ? await isValidCard.action(data.attackingCard, data.defendingCard, g, data.attackingCard?.name ? data.attackingCard.name.split('_')[1] || 1 : null, data.defendingCard?.name ? data.defendingCard?.name.split('_')[1] || 1 : null) : null
+            if (isValidCard.props.typings.isItem) socket.emit('item-played', {card: isValidCard, itemActionRes: itemActionRes})
             // Tell the other player that a card was played
             const p = g.Players.find(player => !player.isTakingTurn)
-            io.sockets.sockets.get(p.props.id).emit('op-play', isValidCard)
+            io.sockets.sockets.get(p.props.id).emit('op-play', {card: isValidCard, itemActionRes: itemActionRes})
         } else {
             socket.emit('no-play', 'Invalid card or other condition')
         }

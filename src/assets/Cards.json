@@ -72,6 +72,14 @@
                 "isMajorOlympian": false,
                 "isPrimordial": true
             }
+        },
+        {
+            "name": "Nectar",
+            "description": "Heal any god for 5 health",
+            "typings": {
+                "isItem": true
+            },
+            "requireMyOwnCardSelection": true
         }
     ]
 }

@@ -6,5 +6,5 @@
         "removeComments": true,
         "declaration": true
     },
-    "files": ["Actions.ts", "Card.ts", "Deck.ts", "Player.ts", "Game.ts"]
+    "files": ["ItemChecks.ts", "Actions.ts", "Card.ts", "Deck.ts", "Player.ts", "Game.ts"]
 }

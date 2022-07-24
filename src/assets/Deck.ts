@@ -27,10 +27,10 @@ class Deck {
             return arr
         })(this.props)
     }
-    draw(): Card {
+    draw(): Card | Item {
         // Get a random card from the array, return its instance and then remove it
         const i = Math.floor(Math.random() * this.cards.length)
-        const card = this.cards[i]
+        const card = this.cards[i] || null
         this.cards.splice(i, 1)
         return card
     }

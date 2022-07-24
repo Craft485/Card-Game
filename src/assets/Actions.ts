@@ -1,18 +1,18 @@
 interface _actionResProps {
-    attackingCard: Card
+    attackingCard?: Card
     defendingCard?: Card
     defendingPlayer?: Player
     attackingPlayer?: Player
     specialConditions?: any
 }
 class actionRes {
-    attackingCard: Card
+    attackingCard?: Card
     defendingCard?: Card
     defendingPlayer?: Player
     attackingPlayer?: Player
     specialConditions?: any
     constructor (props: _actionResProps) {
-        this.attackingCard = props.attackingCard
+        this.attackingCard = props.attackingCard || null
         this.defendingCard = props.defendingCard || null
         this.defendingPlayer = props.defendingPlayer || null
         this.attackingPlayer = props.attackingPlayer || null
@@ -32,8 +32,14 @@ function Zeus_Action(attackingCardData: Card, defendingCardData: Card, game: Gam
     return new actionRes({ attackingCard: attackingCardData, defendingCard: defendingCardData, defendingPlayer: defendingPlayer })
 }
 
+function Nectar_Action(selectedFriendlyCard: Card, selectedOpponentCard: Card, game: Game, attackingCardCount: number, defendingCardCount: number): actionRes | Error {
+    selectedFriendlyCard.health = selectedFriendlyCard.health + 5 >= selectedFriendlyCard.maxHealth ? selectedFriendlyCard.maxHealth : selectedFriendlyCard.health + 5
+    selectedFriendlyCard.props.health = selectedFriendlyCard.health
+    return new actionRes({ attackingCard: selectedFriendlyCard })
+}
+
 // [name: string, action: Function]
 const Actions = new Map([
-    ['Zeus', Zeus_Action]
+    ['Zeus', Zeus_Action], ['Nectar', Nectar_Action]
 ])
 module.exports.Actions = Actions

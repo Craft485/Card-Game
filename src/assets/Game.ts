@@ -1,9 +1,11 @@
 class Game {
     Players: Array<Player>
     playingField: { player?: {id?: string, cards?: {}} }
+    discard: Array<Card>
     constructor () {
         this.Players = []
         this.playingField = {}
+        this.discard = []
     }
     join(id: string): void {
         if (this.Players.length < 3) {
@@ -17,19 +19,21 @@ class Game {
         }
     }
     playCard(cardData: Card, socketID: string): void {
-        // console.log(cardData)
-        let count = 1
-        const gameInstance = this
-        !function recurse() {
-            if (!gameInstance.playingField[socketID].cards[cardData.name + '_' + count]) {
-                // cardData.name += `_${count}`
-                gameInstance.playingField[socketID].cards[cardData.name + '_' + count] = cardData
-                // console.log(gameInstance.playingField[socketID].cards)
-            } else {
-                count++
-                return recurse()
-            }
-        }()
+        if (!cardData.props.typings.isItem) {
+            let count = 1
+            const gameInstance = this
+            !function recurse() {
+                if (!gameInstance.playingField[socketID].cards[cardData.name + '_' + count]) {
+                    gameInstance.playingField[socketID].cards[cardData.name + '_' + count] = cardData
+                } else {
+                    count++
+                    return recurse()
+                }
+            }()
+        } else {
+            // Add item to discard
+            this.discard.push(cardData)
+        }
     }
     drawCard(playerID: string): Card | Error {
         // Get the player

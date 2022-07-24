@@ -137,6 +137,22 @@ row {
     border-color: green;
 }
 
+#played-item {
+    position: absolute;
+    left: 5px;
+    z-index: 6;
+    height: calc(90% / 4);
+    margin: auto;
+    display: flex;
+    width: 10%;
+    justify-content: center;
+    border-radius: 15px;
+}
+
+#played-item .card {
+    width: 100% !important;
+}
+
 .card-cost-display { color: rgb(112, 191, 218); }
 .card-health-display  { color: rgb(100, 200, 125); }
 .card-attack-display  { color: rgb(255, 100, 100); }

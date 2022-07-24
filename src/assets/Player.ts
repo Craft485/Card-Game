@@ -16,6 +16,7 @@ class Player {
         this.id = props.id
         this.deck = props.deck
         this.isTakingTurn = props.isTakingTurn || false
+        this.health = props.health
     }
 }
 

@@ -29,7 +29,7 @@ function generateHTML(card, count) {
     // parent.style.backgroundImage = card.props.imageURL
 
     const title = document.createElement('h3')
-    title.innerHTML = `<b>${card.name}</b>`
+    title.innerHTML = `<b>${card.props.name}</b>`
 
     const stats = document.createElement('div')
     stats.innerHTML = `<span class="card-cost-display">${card.props?.cost || card.cost}</span> / <span class="card-health-display">${card.props?.health || card.health}</span> / <span class="card-attack-display">${card.props?.attack || card.attack}</span>`
@@ -67,30 +67,32 @@ function endTurn() {
 }
 
 function play(cardNameWithCount) {
-    console.log("Play card event")
+    // console.log("Play card event")
     // Update client game state and ui as well as send update to server
     const card = Game.myHand[cardNameWithCount]
     // There are two different counts at play here, my brain doesn't enjoy this
     const cardName = cardNameWithCount.split('_')[0]
     if (card) {
-        // This looks very pointless but this is technically looking at a different part of the game state than the recurse in socket#on('newCard') is looking at and managing said state
-        let count = 1
-        !function recurse() {
-            if (!Game.myCardsInPlay[`${cardName}_${count}`]) {
-                Game.myCardsInPlay[`${cardName}_${count}`] = card
-            } else {
-                count++
-                return recurse()
-            }
-        }()
-        // A hopefully temp fix to keeping count consistent between the game state and the ui
-        const element = document.querySelector(`#${_myField.id} .${cardNameWithCount}`)
-        element.classList.remove(cardNameWithCount)
-        element.classList.add(cardName + "_" + count)
-        Game.myCardsInPlay[cardName + `_${count}`] = card
+        if (!card.props.typings.isItem) {
+            // This looks very pointless but this is technically looking at a different part of the game state than the recurse in socket#on('newCard') is looking at and managing said state
+            let count = 1
+            !function recurse() {
+                if (!Game.myCardsInPlay[`${cardName}_${count}`]) {
+                    Game.myCardsInPlay[`${cardName}_${count}`] = card
+                } else {
+                    count++
+                    return recurse()
+                }
+            }()
+            // A hopefully temp fix to keeping count consistent between the game state and the ui
+            const element = document.querySelector(`#${_myField.id} .${cardNameWithCount}`)
+            element.classList.remove(cardNameWithCount)
+            element.classList.add(cardName + "_" + count)
+            Game.myCardsInPlay[cardName + `_${count}`] = card
+        }
         delete Game.myHand[cardNameWithCount]
         // Server doesn't care what count is
-        socket.emit('play', [cardName])
+        socket.emit('play', {cName: cardName, attackingCard: Game.attackingCard || null, defendingCard: Game.defendingCard || null})
     }
 }
 
@@ -99,7 +101,7 @@ function action() {
     const defendingCard = Game.defendingCard
     const attackingCardCount = document.querySelector(`#${_myField.id} > .card-select-for-action`)?.className.match(/\w+_\d/)[0].split('_')[1]
     const defendingCardCount = document.querySelector(`#${_opField.id} > .card-select-for-action`)?.className.match(/\w+_\d/)[0].split('_')[1]
-    console.log(defendingCardCount)
+    // console.log(defendingCardCount)
     if (Game.isMyTurn && attackingCard.props?.attack && attackingCardCount && defendingCardCount) socket.emit('attack', [attackingCard, defendingCard, attackingCardCount, defendingCardCount])
 }
 
@@ -118,7 +120,7 @@ function selectCardForAction(cardName, cardElement, cardCount = null) {
     let count = null
     if (isMyCard) count = cardElement.className.match(/\w+_\d/)[0].split('_')[1]
     // Update game state
-    Game[selection] = Game[hand][cardCount || count ? `${cardName}_${count || cardCount}` : cardName]
+    Game[selection] = Game[hand][!cardName.includes('_') ? `${cardName}_${count}` : cardName]
     // If we want to unselect a card we've selected
     if (cardElement.classList.contains('card-select-for-action')) {
         Game[selection] = null
@@ -158,7 +160,7 @@ socket.on('game-begin', () => {
 })
 
 socket.on('turn-ended', () => {
-    console.log('Turn ended, it is now your turn')
+    // console.log('Turn ended, it is now your turn')
     Game.isMyTurn = true
     Game.canPlayCard = true
     if (z) {
@@ -172,8 +174,8 @@ socket.on('turn-ended', () => {
 
 socket.on('no-play', msg => console.error(msg))
 
-socket.on('newCard', card => {
-    console.log(card)
+socket.on('newCard', (card, itemCheck) => {
+    if (itemCheck) card.check = Function(`"use strict"; return (${itemCheck.replace(/function \w* ?\(\w*\)/, '() =>')})`)()
     if (card) {
         // Client Side Game State
         let count = 1
@@ -190,14 +192,17 @@ socket.on('newCard', card => {
         const e = generateHTML(card, `_${count}`)
         e.onclick = () => {
             if (!Game.canPlayCard || !Game.isMyTurn) return
+            // If the card is an item, check that it can in fact be played, technically this shouldn't need Game passed to it but we are doing it anyways
+            // Upon the check failing, we should at some point notify the player what about the check failed
+            if (card.props.typings.isItem && itemCheck) if (!card.check(Game)) return
             Game.canPlayCard = false
             // Changed from using outerHTML to regenerating the card html and appending it
             const generatedHTMLForCard = generateHTML(card, `_${count}`)
-            document.getElementById('my-played').appendChild(generatedHTMLForCard)
-            // At the point of this click event firing the element is a child of #my-played
-            const newCard = document.querySelector(`#my-played .${card.name}_${count}`)
+            document.getElementById(card.props.typings.isItem ? 'played-item' : 'my-played').appendChild(generatedHTMLForCard)
+            // At the point of this click event firing the element is a child of either #my-played or #played-item
+            const newCard = document.querySelector(`#${card.props.typings.isItem ? 'played-item' : 'my-played'} .${card.name}_${count}`)
             // Setup cards onclick to be used to attack
-            newCard.onclick = ev => selectCardForAction(card.name, newCard, count)
+            if (!card.props.typings.isItem) newCard.onclick = ev => selectCardForAction(newCard.className.split(' ').find(c => c.includes('_')), newCard)
             e.classList.add('moving')
             newCard.style.visibility = 'hidden'
             e.style = `--new-x: ${newCard.getBoundingClientRect().x}px;
@@ -208,7 +213,7 @@ socket.on('newCard', card => {
             setTimeout(() => {
                 e.remove()
                 newCard.style.visibility = 'visible'
-                Game.canPlayCard = true
+                if(!card.props.typings.isItem) Game.canPlayCard = true
             }, 1900)
 
             play(card.name + `_${count}`)
@@ -221,13 +226,18 @@ socket.on('op-new-card', () => {
     _opHand.appendChild(baseCardWithBG())
 })
 
-socket.on('op-play', card => {
-    console.log("Opponent played card")
+socket.on('op-play', 
+/**
+ * @param { { card: { name: string, props: { typings: { isItem: boolean } } }, itemActionRes: { attackingCard?: { name: string, health: number, cost: number, attack: number }, defendingCard?: { name: string, health: number, cost: number, attack: number }, defendingPlayer?: { health: number }, attackingPlayer?: { health: number }, specialConditions?: any } | null } } res 
+ */
+(res) => {
+    // TODO: Animate opponents card being played
+    // console.log(res)
     // Update game state
     let count = 1
     !function recurse() {
-        if (!Game.opponentsHand[`${card.name}_${count}`]) {
-            Game.opponentsHand[`${card.name}_${count}`] = card
+        if (!Game.opponentsHand[`${res.card.name}_${count}`]) {
+            if (!res.card.props.typings.isItem) Game.opponentsHand[`${res.card.name}_${count}`] = res.card
         } else {
             count++
             return recurse()
@@ -235,10 +245,59 @@ socket.on('op-play', card => {
     }()
     // Update UI
     document.getElementsByClassName('card-b')[0].remove()
-    const newOpCard = generateHTML(card, `_${count}`)
-    newOpCard.onclick = () => selectCardForAction(card.name, newOpCard, count)
-    _opField.appendChild(newOpCard)
+    const newOpCard = generateHTML(res.card, `_${count}`)
+    if (res.itemActionRes) {
+        document.getElementById('played-item').appendChild(newOpCard)
+        itemPlayed(res.itemActionRes)
+    } else {
+        newOpCard.onclick = () => selectCardForAction(`${res.card.name}_${count}`, newOpCard)
+        _opField.appendChild(newOpCard)
+    }
 })
+
+socket.on('item-played', res => {
+    // document.getElementById('played-item').appendChild(generateHTML(res.card))
+    itemPlayed(res.itemActionRes)
+})
+
+/**
+ * @param { { attackingCard?: { props: { name: string }, name: string, health: number, cost: number, attack: number } | null, defendingCard?: { props: { name: string }, name: string, health: number, cost: number, attack: number } | null, defendingPlayer?: { health: number } | null, attackingPlayer?: { health: number } | null, specialConditions?: any } } itemActionRes 
+ */
+function itemPlayed(itemActionRes) {
+    setTimeout(() => { document.getElementById('played-item').style.border = `thin solid ${Game.isMyTurn ? 'blue' : 'red'}` }, 2000)
+    // All these conditions should be checked on a case by case basis, ironically this is exactly why we can't use a switch case here
+    if (itemActionRes.attackingCard) {
+        // "attacking" in this case means that the player selected one of their own cards for the item to select
+        const field = Game.isMyTurn ? Game.myCardsInPlay : Game.opponentsHand
+        // Update game state
+        field[itemActionRes.attackingCard.name] = itemActionRes.attackingCard
+        // Update UI
+        document.querySelector(`#${Game.isMyTurn ? _myField.id : _opField.id} .${itemActionRes.attackingCard.name}`).replaceWith(generateHTML(itemActionRes.attackingCard))
+    }
+    if (itemActionRes.defendingCard) {
+        const field = Game.isMyTurn ? Game.opponentsHand : Game.myCardsInPlay
+        // Update game state
+        field[itemActionRes.defendingCard.name] = itemActionRes.defendingCard
+        // Update UI
+        document.querySelector(`#${Game.isMyTurn ? _opField.id : _myField.id} .${itemActionRes.defendingCard.name}`).replaceWith(generateHTML(itemActionRes.defendingCard))
+    }
+    if (itemActionRes.defendingPlayer) {
+        // If a player was attacked and it is currently my turn, update opponents health, if its not my turn than I have been attacked
+        Game[Game.isMyTurn ? 'opponentsHealth' : 'myHealth'] = itemActionRes.defendingPlayer.health
+        document.querySelector(`#${Game.isMyTurn ? _opHand.id : _myHand.id} .health-display`).innerText = itemActionRes.defendingPlayer.health        
+    }
+    if (itemActionRes.attackingPlayer) {
+        // This logic is basically the opposite of defendingPlayer
+        Game[Game.isMyTurn ? 'myHealth' : 'opponentsHealth'] = itemActionRes.attackingPlayer.health
+        document.querySelector(`#${Game.isMyTurn ? _myHand.id : _opHand.id} .health-display`).innerText = itemActionRes.attackingPlayer.health
+    }
+    // Clear UI, the item card html should be the only child node
+    setTimeout(() =>{
+        document.getElementById('played-item').children[0].remove()
+        document.getElementById('played-item').style.border =  ''
+    }, 4000)
+    Game.canPlayCard = true
+}
 
 socket.on('attack-res', 
 /**
@@ -275,7 +334,7 @@ socket.on('attack-res',
             ? Game[hand][res.defendingCard.name] = res.defendingCard 
             : Game.myHealth = res.defendingCard.props.health
             // Update UI
-            const newCard = generateHTML(res.defendingCard.props, `_${defendingCardCount}`)
+            const newCard = generateHTML(res.defendingCard, `_${defendingCardCount}`)
             newCard.onclick = ev => selectCardForAction(res.defendingCard.name, newCard || ev.path[0])
             defendingCard.replaceWith(newCard)
         }
@@ -307,7 +366,7 @@ socket.on('game-over', res => {
     overlay.appendChild(content)
     document.body.appendChild(overlay)
     socket.close()
-    console.log(`Winner: ${res.w.props.id}\nLoser: ${res.l.props.id}`)
+    console.info(`Winner: ${res.w.props.id}\nLoser: ${res.l.props.id}`)
 })
 const btn = document.getElementById('submit')
 // General UI managment in a response to the game state
